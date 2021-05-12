@@ -651,3 +651,93 @@ def randomize(bms, start, end, div, upper_limit=7):
 						bms.ignored_lines.append(temp.get_string() + '\n')
 						object_num += 1
 				bms.ignored_lines.append('#ENDIF' + '\n')
+
+# Possiblity: decide upper limit based on part instead of needing randomize call to each?
+def randomizeScratch(bms, start, end, div, upper_limit=8):
+	from collections import defaultdict
+	from itertools import combinations
+	KEYS = [0,1,2,3,4,5,6,7]
+
+	for measure_number in range(start, end):
+		usable = defaultdict(list)
+		for measure in bms.find([measure_number], [Note.LANE_BGM]):
+			# Pull up to 6
+			del_queue = []
+			msx = measure.size
+			if measure_number in bms.meters:
+				msx /= bms.meters[measure_number]
+			if div % msx == 0:
+				for note in measure.notes:
+					if len(usable[note.pos * (div // msx)]) < upper_limit:
+						usable[note.pos * (div // msx)].append(note.object)
+						del_queue.append(note) #4.13
+			for note in del_queue: measure.notes.remove(note)
+		for pos, objects in usable.items():
+			possiblities = list(combinations(KEYS, 8-len(objects)))
+			bms.ignored_lines.append('#RANDOM ' + str(len(possiblities)) + '\n')
+			if pos != 0:
+				new_pos = pos
+				new_div = div
+				if measure_number in bms.meters:
+					new_div *= bms.meters[measure_number]
+				while new_pos / 2 % 1 == 0 and new_div / 2 % 1 == 0:
+					new_pos /= 2
+					new_div /= 2
+			if pos == 0:
+				new_pos = 0
+				new_div = 1
+			for n, possiblity in enumerate(possiblities, 1):
+				bms.ignored_lines.append('#IF ' + str(n) + '\n')
+				object_num = 0
+				for key in KEYS:
+					if key not in possiblity:
+						temp = Measure(new_div, '1' + BMSparser._real_lane(key), measure_number)
+						temp.add(Note(objects[object_num], int(new_pos)))
+						bms.ignored_lines.append(temp.get_string() + '\n')
+						object_num += 1
+				bms.ignored_lines.append('#ENDIF' + '\n')
+                
+# Possiblity: decide upper limit based on part instead of needing randomize call to each?
+def randomize5(bms, start, end, div, upper_limit=5):
+	from collections import defaultdict
+	from itertools import combinations
+	KEYS = [1,2,3,4,5]
+
+	for measure_number in range(start, end):
+		usable = defaultdict(list)
+		for measure in bms.find([measure_number], [Note.LANE_BGM]):
+			# Pull up to 6
+			del_queue = []
+			msx = measure.size
+			if measure_number in bms.meters:
+				msx /= bms.meters[measure_number]
+			if div % msx == 0:
+				for note in measure.notes:
+					if len(usable[note.pos * (div // msx)]) < upper_limit:
+						usable[note.pos * (div // msx)].append(note.object)
+						del_queue.append(note) #4.13
+			for note in del_queue: measure.notes.remove(note)
+		for pos, objects in usable.items():
+			possiblities = list(combinations(KEYS, 5-len(objects)))
+			bms.ignored_lines.append('#RANDOM ' + str(len(possiblities)) + '\n')
+			if pos != 0:
+				new_pos = pos
+				new_div = div
+				if measure_number in bms.meters:
+					new_div *= bms.meters[measure_number]
+				while new_pos / 2 % 1 == 0 and new_div / 2 % 1 == 0:
+					new_pos /= 2
+					new_div /= 2
+			if pos == 0:
+				new_pos = 0
+				new_div = 1
+			for n, possiblity in enumerate(possiblities, 1):
+				bms.ignored_lines.append('#IF ' + str(n) + '\n')
+				object_num = 0
+				for key in KEYS:
+					if key not in possiblity:
+						temp = Measure(new_div, '1' + BMSparser._real_lane(key), measure_number)
+						temp.add(Note(objects[object_num], int(new_pos)))
+						bms.ignored_lines.append(temp.get_string() + '\n')
+						object_num += 1
+				bms.ignored_lines.append('#ENDIF' + '\n')
